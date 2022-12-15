@@ -1,0 +1,868 @@
+---
+title: "Exploring Medical Conditions that Contribute to Cardiovascular Disease"
+author: "Seth Galluzzi (vzw6yk)"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(caret)
+```
+
+# Executive Summary
+
+# Description of Data
+```{r}
+library(faraway)
+library(caret)
+
+df <- diabetes
+
+?diabetes
+summary(df)
+head(df)
+
+### Using subset to get rid of the values id, bp.2s, and bp.2d
+df <- subset(df, select = -c(id,bp.2s,bp.2d))
+
+
+### Filling missing data with median of set.
+df <- df                                    
+df$glyhb[is.na(df$glyhb)] <- median(df$glyhb, na.rm = TRUE)  
+
+df <- df                                    
+df$chol[is.na(df$chol)] <- median(df$chol, na.rm = TRUE)  
+
+df <- df                                    
+df$hdl[is.na(df$hdl)] <- median(df$hdl, na.rm = TRUE)  
+
+df <- df                                    
+df$ratio[is.na(df$ratio)] <- median(df$ratio, na.rm = TRUE)  
+
+df <- df                                    
+df$height[is.na(df$height)] <- median(df$height, na.rm = TRUE)  
+
+df <- df                                    
+df$weight[is.na(df$weight)] <- median(df$weight, na.rm = TRUE)  
+
+df <- df                                    
+df$bp.1s[is.na(df$bp.1s)] <- median(df$bp.1s, na.rm = TRUE)  
+
+df <- df                                    
+df$bp.1d[is.na(df$bp.1d)] <- median(df$bp.1d, na.rm = TRUE)  
+
+df <- df                                    
+df$waist[is.na(df$waist)] <- median(df$waist, na.rm = TRUE)  
+
+df <- df                                    
+df$hip[is.na(df$hip)] <- median(df$hip, na.rm = TRUE)  
+
+df <- df                                    
+df$time.ppn[is.na(df$time.ppn)] <- median(df$time.ppn, na.rm = TRUE)  
+
+### Replacing missing values of column frame with 'medium'.
+df$frame <- df$frame %>% replace_na('medium')
+
+### Displaying the data. 
+head(df)
+
+summary(df)
+```
+
+# Data Exploration and Visualizations
+```{r}
+library(faraway)
+
+df <- diabetes
+
+?diabetes
+
+summary(df$location)
+summary(df$ratio)
+summary(df$time.ppn)
+
+library(tidyverse)
+```
+
+
+```{r}
+#scatterplot comparisons of variables 
+
+#scatterplot of glyhb and chol
+ggplot(df, aes(x=glyhb ,y= chol))+
+  geom_point(shape=5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  labs(x="Glycosolated Hemoglobin", y="Cholesterol", title="Cholesterol against Glycosolated Hemoglobin")
+
+#plot of weight and ratio
+ggplot(df, aes(x=weight ,y=ratio ))+
+  geom_point(shape=5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  labs(x="Weight", y="Ratio of Cholesterol to HDL", title="Ratio against Weight")
+
+#plot of hdl and chol 
+ggplot(df, aes(x=hdl ,y= chol))+
+  geom_point(shape=5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  labs(x="High Density Lipotene", y="Cholesterol", title="High Density Lipotene against Glycosolated Hemoglobin")
+
+#scatterplot of weight and cholesterol 
+ggplot(df, aes(x=weight ,y= chol))+
+  geom_point(shape=5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  labs(x="Weight", y="Cholesterol", title="Cholesterol against Weight Scatter Plot")
+
+#scatterplot of ratio and weight by gender
+ggplot(df, aes(x = weight, y = ratio, color = gender))+
+  geom_point()+
+  geom_smooth(method = 'lm', se= FALSE)+
+  labs(x = "Weight", y = "Cholesterol to HDL Ratio", color = "Gender", title = "Cholesterol to HDL Ratio against Weight between Genders")
+
+df$logratio=log(df$ratio)
+
+#plot of ratio, and weight
+ggplot(df, aes(x = ratio, y = weight,))+
+  geom_point()+
+  geom_smooth(method = 'lm', se= FALSE)+
+  labs(x = "Ratio between Cholesterol and HDL", y = "Weight", title = "Ratio against Weight")
+
+#scatterplot of weight and hdl
+ggplot(df, aes(x=weight ,y= hdl))+
+  geom_point(shape=5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  labs(x="Weight", y="HDL", title="High Density Lipotene against Weight")
+
+#scatter plot of glyhb by gender
+ggplot(df, aes(x = weight, y = glyhb, color = gender))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+
+  scale_x_continuous(n.breaks=10)+
+  labs(x="Weight", y = "Glycosolated Hemoglobin",
+       title = "Weight against Glycosolated Hemoglobin", color = "Gender")
+```
+
+```{r}
+#box plot of cholesterol by gender
+ggplot(df, aes(x=chol, color = gender))+
+  geom_boxplot()+
+  labs(x = "Cholesterol", title= "Cholesterol Box Plot by Gender", 
+       color = "Gender")
+
+#histogram of cholesterol 
+ggplot(df, aes(x= chol))+
+  geom_histogram()+
+  labs(x = "Cholesterol (mg/dL)", y = "Total Observations", title = "Cholesterol Histogram")
+
+#histogram of cholesterol and gender 
+ggplot(df, aes(x = chol, color= gender))+
+  geom_histogram()+
+  labs(x = "Cholesterol", y = "Total", title = "Cholesterol Levels Histogram")
+```
+
+```{r}
+#visuals of diabetes 
+
+df$diabetes <- df$glyhb > 7
+
+#histogram of cholesterol and diabetes 
+ggplot(df, aes(x=chol, color = diabetes))+
+  geom_histogram()+
+  labs(x="Diabetes", title = "Diabetes by Gender")
+
+#boxplot of diabetes and hdl 
+ggplot(df, aes(x=diabetes, y = hdl))+
+  geom_boxplot(method="lm", se=FALSE)+
+  labs(x="Diabetes", y= "HDL", title = "Choleasdferoasdf")
+
+#bar chart of diabetes 
+ggplot(df, aes(x=diabetes))+
+  geom_bar()+
+  labs(x="Diabetes", y= "Total", title = "Positive Diabetes Tests")
+
+ggplot(df, aes(x=diabetes, y = chol))+
+  geom_boxplot()+
+  labs(x="Diabetes Risk", y= "Cholesterol", title = "Cholesterol against Diabetes Risk")
+
+#bar chart of diabetes and gender 
+ggplot(df, aes(x=diabetes, fill = gender))+
+  geom_bar()+
+  labs(x = "Diabetes Risk", y = "Total Observations",
+       title = "Diabetes Risk by Gender", fill = "Gender")
+```
+
+```{r}
+summary(df$hip)
+summary(df$waist)
+summary(df$age)
+summary(df$gender)
+summary(df$height)
+mean(df$height)
+summary(df$weight)
+summary(df$frame)
+```
+
+
+# Simple Linear Regression
+---
+title: "Diabetes dataset - SLR"
+author: "Haley Egan"
+date: "12/5/2021"
+output: html_document
+---
+```{r}
+#clean data 
+library(faraway)
+library(caret)
+
+df <- diabetes
+summary(df)
+head(df)
+
+df <- subset(df, select = -c(id,bp.2s,bp.2d))
+df <- df                                    
+df$glyhb[is.na(df$glyhb)] <- median(df$glyhb, na.rm = TRUE)  
+df <- df                                    
+df$chol[is.na(df$chol)] <- median(df$chol, na.rm = TRUE)  
+df <- df                                    
+df$hdl[is.na(df$hdl)] <- median(df$hdl, na.rm = TRUE)  
+df <- df                                    
+df$ratio[is.na(df$ratio)] <- median(df$ratio, na.rm = TRUE)  
+df <- df                                    
+df$height[is.na(df$height)] <- median(df$height, na.rm = TRUE)  
+df <- df                                    
+df$weight[is.na(df$weight)] <- median(df$weight, na.rm = TRUE)  
+df <- df                                    
+df$bp.1s[is.na(df$bp.1s)] <- median(df$bp.1s, na.rm = TRUE)  
+df <- df                                    
+df$bp.1d[is.na(df$bp.1d)] <- median(df$bp.1d, na.rm = TRUE)  
+df <- df                                    
+df$waist[is.na(df$waist)] <- median(df$waist, na.rm = TRUE)  
+df <- df                                    
+df$hip[is.na(df$hip)] <- median(df$hip, na.rm = TRUE)  
+df <- df                                    
+df$time.ppn[is.na(df$time.ppn)] <- median(df$time.ppn, na.rm = TRUE)  
+
+df$frame <- df$frame %>% replace_na('medium')
+
+df[sapply(df, is.factor)] <- data.matrix(df[sapply(df, is.factor)])
+
+head(df)
+#summary(df)
+```
+
+#select two columns for Simple Linear Regression
+```{r}
+#make a new data frame with only glyhb and stab.glu
+SLRdf <- df[,c('stab.glu', 'glyhb')]
+head(SLRdf)
+```
+
+Response Variable = glyhb (Glycosolated Hemoglobin)
+Predictor Variable = stab.glu (Stabilized Glucose)
+
+```{r}
+#scatter plot to visualize variables with fitted regression line 
+ggplot(SLRdf, aes(x=stab.glu,y=glyhb))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+ #fit regression equation line to plot 
+  labs(x="Stabilized Glucose", y="Glycosolated Hemoglobin", title="Scatterplot of Glycosolated Hemoglobin against Stabilized Glucose")
+```
+
+#Observation:
+There appears to be a positive linear relationship between the variables. However, there is clustering in the bottom left of the scatter plot. 
+
+```{r}
+##Fit a simple linear regression model
+result<-lm(glyhb~stab.glu, data=SLRdf)
+summary(result)
+```
+
+Estimated Regression Equation: y = 2.2351 + 0.0312x
+
+#Interpretation:
+For every unit increase in Stabilized Glucose, Glycosolated Hemoglobin will increase by 2.2351. There is a positive linear relationship between the two variables.
+
+# Model diagnostics 
+
+```{r}
+##store fitted y & residuals
+yhat<-result$fitted.values
+res<-result$residuals
+
+##add to data frame
+SLRdf<-data.frame(SLRdf,yhat,res)
+```
+
+```{r}
+##residual plot
+ggplot(SLRdf, aes(x=yhat,y=res))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="Fitted y", y="Residuals", title="Residual Plot")
+```
+
+#Interpretation:
+
+The error terms are clustered on the left side of the plot. This could indicate that the error terms do not have a constant variance, and that assumption 3 is not met. There does appear to be a linear pattern (seen in scatter plot), but there is clustering on the left side, which does not meet assumption 1, that the residuals are evenly scattered around the line without an apparent pattern. Also, the error terms appear to have a mean of zero, which does meet assumption 2. A transformation is needed to meet the assumptions.
+
+```{r}
+#box cox plot 
+library(MASS) ##to use boxcox function
+boxcox(result)
+```
+
+#Interpretation: 
+
+A transforamation is needed, and a log transformation might be the best type. 
+
+```{r}
+##transform y and then regress ystar on x
+ystar<-log((SLRdf$glyhb))
+Data<-data.frame(SLRdf,ystar)
+result.ystar<-lm(ystar~stab.glu, data=SLRdf)
+
+##store fitted y & residuals
+yhat2<-result.ystar$fitted.values
+res2<-result.ystar$residuals
+
+##add to data frame
+SLRdf<-data.frame(SLRdf,yhat2,res2)
+
+##residual plot with ystar
+ggplot(SLRdf, aes(x=yhat2,y=res2))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="y*", y="Residuals", title="Y* Residual Plot")
+```
+
+```{r}
+boxcox(result.ystar)
+```
+
+#Interpretation:
+
+The transformation did improve the residual plot. However, there is still clustering on the left side of the plot. Further transformation is needed for the x variable.
+
+```{r}
+##transform x and then regress y* on x*
+xstar<-log((SLRdf$stab.glu))
+Data<-data.frame(SLRdf,xstar)
+result.xstar<-lm(ystar~xstar, data=Data)
+
+##store fitted y & residuals
+yhat3<-result.xstar$fitted.values
+res3<-result.xstar$residuals
+
+##add to data frame
+Data<-data.frame(SLRdf,yhat3,res3)
+
+##residual plot with ystar
+ggplot(SLRdf, aes(x=yhat3,y=res3))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="Fitted y", y="Residuals", title="Residual Plot with X* and Y*")
+```
+#Create a scatterplot of y∗ against x*. 
+```{r}
+##scatterplot, and overlay regression line
+ggplot(SLRdf, aes(x=xstar, y=ystar))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+ #fit regression equation line to plot 
+  labs(x="x*", y="y*", title="Scatterplot of y* against x*")
+``` 
+
+#Check other assumptions
+```{r}
+#ACF plot of residuals 
+acf(res2, main="ACF Plot of Residuals with ystar")
+```
+
+#Interpretation:
+The ACF plot checks assumption 4, that the error terms are uncorrelated and independed. The assumption is nearly met, because the vertical lines are within the horizontal blue lines. However, one line is not within the blue zone.
+
+```{r}
+#QQ plot of residuals
+qqnorm(res2)
+qqline(res2, col="red")
+```
+
+#Interpretation:
+The QQ plot checks assumption 5, that the errors follow normal distribution. A normal probability plot should fall close to the red line, representing expected values under normality. The errors almost entirely fall on the red line, except on the far right side where the errors curve upward, away from the line. The assumption is close to being met. 
+
+```{r}
+result.ystar
+```
+
+```{r}
+#correlation b/w glycosolated hemoglobin and stabilized glucose
+cor(SLRdf$glyhb, SLRdf$stab.glu)
+```
+
+#Interpretation:
+There is a strong positive relationship between Glycosolated Hemoglobin and Stabilized Glucose, because 0.749824 is fairly close to 1. 
+
+```{r}
+#average of residuals
+mean(result$residuals)
+```
+
+#Interpretation:
+The average value of all the residuals is 1.399475e-17. This suggests that the average data point is above, but very close the fitted line, because 1.399475e-17 is very close to 0. On average, the line appears to fit the data well. 
+
+```{r}
+#ANOVA table
+
+anova.tab<-anova(result)
+anova.tab
+
+#calculate SST
+SST<-sum(anova.tab$"Sum Sq")
+SST
+
+#calculate R2
+anova.tab$"Sum Sq"[1]/SST
+```
+
+#Hypothesis Test:
+H0: B1 = 0;
+Ha: B1 ≠ 0
+
+- H0, the null hypothesis, suggests that there is no evidence of a linear relationship between Glycosolated Hemoglobin and Stabilized Glucose. (Regression line would be flat).
+- Ha, the alternative hypothesis, suggests that there is evidence of a linear relationship between Glycosolated Hemoglobin and Stabilized Glucose. (Regression line would not be flat).
+
+p-value = 2.2e-16 
+
+Based on the Anova F test for this SLR, we reject the null hypothesis and conclude that there is a linear relationship between Glycosolated Hemoglobin and Stabilized Glucose. The p-value is very low, at 2.2e-16, less than any alpha, so it is unlikely that the slope of 0.031221 occurred by chance. 
+
+```{r}
+##produce 95% CIs for all regression coefficients
+confint(result,level = 0.95)
+```
+
+#Interpretation:
+There is 95% confidence that the Stabilized Glucose level will be between (0.02851678, 0.03392596).
+
+```{r}
+#confidence interval for average glycosolated hemoglobin with a stabilized glucose level of 0.04
+##to produce 95% CI for the mean response when x=0.04
+##and the 95% PI for the response of an observation when x=0.04
+newdata<-data.frame(stab.glu=0.04)
+predict(result,newdata,level=0.95, interval="confidence") #newdata <- for what value of x do i want to make a prediction of y for 
+
+#For a prediction interval for average glycosolated hemoglobin with a stabilized glucose level of 0.04
+predict(result,newdata,level=0.95, interval="prediction") 
+
+```
+
+The 95% confidence interval for average Glycosolated Hemoglobin with a Stabilized Glucose level of 0.04 is (1.914303 2.558441).
+
+The prediction interval for average  Glycosolated Hemoglobin with a Stabilized Glucose level of 0.04 with 95% confidence is (-0.6597715, 5.132515).
+
+#Model Diagnostics
+---
+title: "Diabetes Dataset MLR - 2"
+author: "Haley Egan"
+date: "12/6/2021"
+output: html_document
+---
+
+```{r}
+#install.packages("GGally")
+library(GGally)
+```
+
+```{r}
+#make data frame of subset of data with all quantitative variables
+df <- df[,c('glyhb', 'chol', 'stab.glu', 'hdl', 'ratio', 'age', 'height', 'weight', 'frame', 'bp.1s', 'bp.1d', 'waist', 'hip', 'time.ppn')]
+head(df)
+```
+
+```{r}
+#fit multiple linear regression model, glyhb as response
+result <- lm(glyhb~., data=df)
+summary(result)
+```
+
+#Interpretation:
+Looking at the t test for all the coefficients, the only coefficients with significant p-values are stabilized glucose (stab.glu), age in years (age), and postprandial time (in minutes) when labs were drawn (time.ppn). All other 11 predictors have insignificant p-values. 
+
+The t tests do not inform us if we can drop all of these predictors simultaneously from the model, so we need to conduct a partial F test.
+
+#Hypothesis:
+H0 : B1 = B3 = B4 = B6 = B7 = B8 = B9 = B10 = B11 = B12 = B13 = 0 
+Ha : at least one of the coefficients in H0 is not 0.
+
+The null hypothesis supports going with the reduced model by dropping the insignificant predictors, whereas the alternative hypothesis supports the full model by not dropping any predictors.
+
+#see if reduced model can be used 
+#fit the reduced model, and then use the anova() function to compare the reduced model with the full model
+```{r}
+#fit reduce model with just stab.glu 
+reduced <- lm(glyhb~stab.glu+age+time.ppn+chol+ratio, data=df)
+```
+
+```{r}
+##perform the partial F test to see if we can drop the predictors
+anova(reduced,result)
+```
+
+#Hypothesis Test: 
+
+A hypothesis test was conducted to determine if the reduced model could be used over the full model. The null hypothesis supports going with the reduced model by dropping the insignificant predictors, whereas the alternative hypothesis supports the full model by not dropping any predictors.
+
+H0 : B1 = B3 = B4 = B6 = B7 = B8 = B9 = B10 = B11 = B12 = B13 = 0 
+Ha : at least one of the coefficients in H0 is not 0.
+
+Based on the Partial F Test, the F statistic is 0.2998, and the p-value is 0.9658. Due to the high p-value, we fail to reject the null hypothesis. There is little evidence for supporting the full model. Therefore, the reduced model can be used over the full model. 
+
+
+#Check for multicollinearity 
+```{r}
+#pairwise correlation between predictors 
+cor(df[,c( 'chol', 'stab.glu', 'hdl', 'ratio', 'age', 'height', 'weight', 'frame', 'bp.1s', 'bp.1d', 'waist', 'hip', 'time.ppn')])
+```
+
+#Interpretation:
+There is a moderately high correlation of -0.69 between hdl and ratio. There are also very strong correlations between waist and weight, and hip and waist, which does make sense, but is not correlated to glyhb. 
+
+#Find the variance inflation factors (VIFs) for the model
+```{r}
+##vif function found in faraway package
+library(faraway)
+```
+
+```{r}
+##VIFs for the regression model with 4 predictors
+vif(result)
+```
+
+#Interpretation:
+None of the VIF's exceed 10, which means there are no significantly high VIFs, suggesting there is not a high correlation between predictors. 
+
+#Perform all possible regressions (nbest=1)
+```{r}
+library(leaps)
+```
+
+```{r}
+allreg <- regsubsets(glyhb ~., data=df, nbest=1)
+summary(allreg)
+```
+
+##perform all possible regressions (nbest=2)
+```{r}
+allreg2 <- regsubsets(glyhb ~., data=df, nbest=2)
+summary(allreg2)
+```
+
+#Interpretation:
+Based on R2, among all possible 1-predictor models, the model that is best has stab.glu as the
+one predictor. The second best 1-predictor model has age as the one predictor.
+
+##find model with best according to different criteria
+```{r}
+which.max(summary(allreg2)$adjr2)
+which.min(summary(allreg2)$cp)
+which.min(summary(allreg2)$bic)
+```
+
+#Interpretation:
+From allreg2, model 9 has the best adjusted R2 and Mallow’s Cp, model 7 has the best BIC.
+
+##find coefficients and predictors of model with best adj r2, cp, bic
+```{r}
+coef(allreg2, which.max(summary(allreg2)$adjr2))
+coef(allreg2, which.min(summary(allreg2)$cp))
+coef(allreg2, which.min(summary(allreg2)$bic))
+```
+
+#Interpretation:
+We have 2 candidate models. One with chol, stab.glu, ratio, age, and time.ppn. The other with stab.glu, ratio, age, and time.ppn. 
+
+#Forward selection, backward elimination, stepwise reg
+```{r}
+##intercept only model
+regnull <- lm(glyhb~1, data=df)
+
+##model with all predictors
+regfull <- lm(glyhb~., data=df)
+```
+
+```{r}
+#Forward selection
+step(regnull, scope=list(lower=regnull, upper=regfull), direction="forward")
+```
+
+#Interpretation:
+The resulting model recommendation of Forward Selection is a model with stab.glu, chol, age, time.ppn, and ratio. 
+
+```{r}
+#Backward elimination 
+step(regfull, scope=list(lower=regnull, upper=regfull), direction="backward")
+```
+
+#Interpretation:
+The resulting model recommendation from Backward Elimination is chol, stab.glu, ratio, age, and time.ppn, which is the same result as from Forward Selection. 
+
+```{r}
+#Stepwise Regression
+step(regnull, scope=list(lower=regnull, upper=regfull), direction="both")
+```
+
+#Interpretation:
+The suggested model as a result of Stepwise Regression is stab.glu, chol, age, time.ppn, and ratio, which is the same as both Backward Elimination and Forward Selection.
+
+#Check for outliers and residuals 
+```{r}
+##residuals, e_i
+res<-result$residuals 
+
+## find standardized residuals, d_i
+standard.res<-res/summary(result)$sigma
+
+##find studentized residuals, r_i
+student.res<-rstandard(result) 
+
+##externally studentized residuals, t_i
+ext.student.res<-rstudent(result) 
+
+res.frame<-data.frame(res,standard.res,student.res,ext.student.res)
+```
+
+```{r}
+par(mfrow=c(1,3))
+plot(result$fitted.values,standard.res,main="Standardized Residuals", ylim=c(-4.5,4.5))
+plot(result$fitted.values,student.res,main="Studentized Residuals", ylim=c(-4.5,4.5))
+plot(result$fitted.values,ext.student.res,main="Externally  Studentized Residuals", ylim=c(-4.5,4.5))
+```
+
+#Use the t distribution and the Bonferroni procedure to find a cut off value for outlier detection using externally studentized residuals. If |ti| > t1− α2n,n−1−p, observation i is deemed an outlier.
+```{r}
+##critical value using Bonferroni procedure
+n<-dim(df)[1]
+p<-3
+crit<-qt(1-0.05/(2*n), n-1-p)
+
+##identify outliers
+ext.student.res[abs(ext.student.res)>crit]
+```
+
+#Interpretation:
+Observations 63, 195, 334, and 363 may be outliers. 
+
+```{r}
+#look at columns of interest - with differences between tests 
+res.frame[63,]
+res.frame[195,]
+res.frame[334,]
+res.frame[363,]
+```
+
+
+Leverages, hii, are used to identify how far observation i is from the centroid of the predictor space. If hii >2pn, then observation i is deemed to have high leverage and is outlying in the predictor space. High leverage observations are data points that are most likely to be influential. 
+```{r}
+#High leverage observations are data points that are most likely to be influential. To identify high leverage observations:
+##leverages
+lev<-lm.influence(result)$hat 
+
+##identify high leverage points
+lev[lev>2*p/n]
+```
+
+#Interpretation:
+Several observations have high leverages. 195 is the only observation with a high leverage that was identified previously as an outlier. 
+
+
+#Cook’s distance, Di, can be interpreted as the squared Euclidean distance that the vector of fitted values moves when observation i is removed from the regression model. A cutoff rule for an influential observation is Di > F0.5,p.n−p.
+```{r}
+##cooks distance
+COOKS<-cooks.distance(result)
+COOKS[COOKS>qf(0.5,p,n-p)]
+```
+
+#Interpretation:
+
+No observations has been identified as influential. 
+
+#DFFITSi measures how much the fitted value of observation i changes when it is removed from the regression model. Observation i is influential if |DFFITSi| > 2√p/n.
+```{r}
+##dffits
+DFFITS<-dffits(result)
+DFFITS[abs(DFFITS)>2*sqrt(p/n)]
+```
+#Interpretation:
+32 observations are influential based on DFFITSi
+
+```{r}
+##dfbetas
+DFBETAS<-dfbetas(result)
+abs(DFBETAS)>2/sqrt(n)
+```
+
+```{r}
+##for beta0
+DFBETAS[abs(DFBETAS[,1])>2/sqrt(n),1]
+```
+
+```{r}
+##for beta1
+DFBETAS[abs(DFBETAS[,2])>2/sqrt(n),2]
+```
+
+```{r}
+##for beta2
+DFBETAS[abs(DFBETAS[,3])>2/sqrt(n),3]
+```
+
+#Multiple Linear Regression
+
+#Select columns based off reduced model for multiple linear regression
+#Reduced model based of model diagnostics 
+```{r}
+#make a new dataframe of subset of data with only quantitative variables
+reducedDF <- df[,c('glyhb','chol','stab.glu', 'ratio', 'age', 'time.ppn')]
+head(reducedDF)
+```
+
+```{r}
+#generate pairs plot
+ggpairs(reducedDF)
+```
+
+```{r}
+#scatterplot matrix - good for multiple quantitative variables. creates all scatterplots for all quantitative variables
+pairs(reducedDF, lower.panel = NULL)
+```
+
+```{r}
+#pairwise correlation between all pairs of correlation between variables
+round(cor(reducedDF),3)
+```
+
+#Interpretation:
+There is a strong correlation between Glycosolated Hemoglobin (glyhb) and Stabilized Glucose (stab.glu), at 0.75. There is not a very strong correlation between the remaining variables.
+
+```{r}
+#fit multiple linear regression model,
+result <- lm(glyhb~., data=reducedDF)
+summary(result)
+```
+
+Estimated Regression Equation: y = 0.4162 +  0.0034(chol) + 0.0237(stab.glu) + 0.1131(ratio) + 0.0147(age) + 0.0006(time.ppn) 
+
+#Check the regression assumptions with residual plot, ACF plot of the residuals, and a QQ plot of the residuals
+```{r}
+#create residual plot
+yhat<-result$fitted.values
+res<-result$residuals
+reducedDF<-data.frame(reducedDF,yhat,res)
+
+ggplot(reducedDF, aes(x=yhat,y=res))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="Fitted y", y="Residuals", title="Residual Plot")
+```
+
+#Interpretation:
+The error terms are clustered on the far left of the residual plot. Therefore there is not a constant variance and assumption 3 is not met. Assumption 2 is met, because the error terms appear to have a mean of 0. 
+
+```{r}
+#box cox plot 
+library(MASS) ##to use boxcox function
+boxcox(result)
+```
+
+```{r}
+##transform y and then regress ystar on x
+ystar<-(reducedDF$glyhb)^(1)
+reducedDF<-data.frame(reducedDF,ystar)
+result.ystar<-lm(ystar~stab.glu, data=reducedDF)
+
+##store fitted y & residuals
+yhat2<-result.ystar$fitted.values
+res2<-result.ystar$residuals
+
+##add to data frame
+reducedDF<-data.frame(reducedDF,yhat2,res2)
+```
+
+```{r}
+##Fit a regression model
+result2<-lm(ystar~res2, data=reducedDF)
+
+##store fitted y & residuals
+yhat<-result2$fitted.values
+res<-result2$residuals
+
+##add to data frame
+reducedDF<-data.frame(reducedDF,yhat,res)
+
+##residual plot
+ggplot(reducedDF, aes(x=yhat,y=res))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="y*", y="Residuals", title="Y* Residual Plot")
+```
+
+```{r}
+boxcox(result.ystar)
+```
+
+```{r}
+##transform x and then regress y* on x*
+xstar<-(reducedDF$stab.glu)^-1
+reducedDF<-data.frame(reducedDF,xstar)
+result2.xstar<-lm(ystar~stab.glu, data=reducedDF)
+
+##store fitted y & residuals
+xhat2<-result2.xstar$fitted.values
+res2<-result2.xstar$residuals
+
+##add to data frame
+reducedDF<-data.frame(reducedDF,yhat2,res2)
+```
+
+```{r}
+##residual plot with ystar
+ggplot(reducedDF, aes(x=xstar,y=res2))+
+  geom_point()+
+  geom_hline(yintercept=0, color="red")+
+  labs(x="Fitted y", y="Residuals", title="X* Residual Plot")
+```
+
+
+```{r}
+#ACF plot of residuals
+acf(res2, main="ACF Plot of Residuals with ystar")
+```
+
+#Interpretation:
+Assumption 4 is met in this ACF plot, because it shows that the error terms are uncorrelated and independent. There are no vertical lines outside of the horizontal blue zone. 
+
+```{r}
+#QQ plot of residuals
+qqnorm(res2)
+qqline(res2, col="red")
+```
+
+#Interpretation:
+Assumption 5 is largely met, indicating that the error terms follow normal distribution. The error terms fall along the red line, except for at the far right of the plot. 
+
+
+```{r}
+#ANOVA table
+
+anova.tab<-anova(result)
+anova.tab
+```
+
+#Hypothesis Test: 
+
+A hypothesis test was conducted to determine if there is a relationship between the response variable and predictor variables. H0 suggested that there is no evidence of a linear relationship, and Ha suggests that there is a linear relationship. 
+
+H0: B1 = 0; Ha: B1 ≠ 0
+
+Based on the ANOVA F test for this MLR, all p-values are smaller than alpha, 0.05. Thus, we reject the null hypothesis and conclude that there is a relationship between the response variable, glycosylated hemoglobin, and the predictor variables. 
+
+
